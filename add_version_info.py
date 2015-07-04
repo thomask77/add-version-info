@@ -4,6 +4,8 @@
 #
 # Copyright (c)2015 Thomas Kindler <mail_git@t-kindler.de>
 #     
+# 2015-07-04, tk:  v2.0.1, Don't load data for SHT_NOBITS sections.
+#
 # 2015-06-20, tk:  v2.0.0, Support for ELF64 and binary files,
 #                  elf_reader rewritten from scratch. New options
 #                  for version control command and desired CRC.  
@@ -113,7 +115,7 @@ def parse_args():
     )
     
     parser.add_argument(
-        "--version", action="version", version="%(prog)s 2.0.0"
+        "--version", action="version", version="%(prog)s 2.0.1"
     )
 
     parser.add_argument(

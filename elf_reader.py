@@ -194,7 +194,11 @@ class ELFObject:
         obj.sections = []
         for i in range(obj.header.e_shnum):
             s = elf_shdr.from_buffer(data, i * sizeof(elf_shdr) + obj.header.e_shoff)
-            s.data = (c_char * s.sh_size).from_buffer(data, s.sh_offset)
+
+            # Add data (if any)
+            #
+            if s.sh_type != SHT_NOBITS:
+                s.data = (c_char * s.sh_size).from_buffer(data, s.sh_offset)
 
             # Find program segment and calculate load memory address 
             #
