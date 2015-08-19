@@ -1,18 +1,16 @@
-#!/usr/bin/env python2
+#!/usr/bin/python
 #
 # Add CRC checksum and version information to ELF and binary files
 #
 # Copyright (c)2015 Thomas Kindler <mail_git@t-kindler.de>
-#     
-# 2015-07-04, tk:  v2.0.1, Don't load data for SHT_NOBITS sections.
 #
-# 2015-06-20, tk:  v2.0.0, Support for ELF64 and binary files,
-#                  elf_reader rewritten from scratch. New options
-#                  for version control command and desired CRC.  
-#
-# 2015-02-14, tk:  v1.1.0, Added svn support.
-#
-# 2015-01-24, tk:  v1.0.0, Initial implementation.
+# 2015-08-19, tk:   v2.0.2, Improved performance. Added --no-crc option.
+# 2015-07-04, tk:   v2.0.1, Don't load data for SHT_NOBITS sections.
+# 2015-06-20, tk:   v2.0.0, Support for ELF64 and binary files,
+#                   elf_reader rewritten from scratch. New options
+#                   for version control command and desired CRC.
+# 2015-02-14, tk:   v1.1.0, Added svn support.
+# 2015-01-24, tk:   v1.0.0, Initial implementation.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -85,9 +83,9 @@ def fill_version_info(info):
     info.build_time = now.strftime("%H:%M:%S")
 
 
-def dprint(*str):
+def dprint(*text):
     if args.verbose:
-        for s in str:
+        for s in text:
             print s,
         print
 
@@ -111,39 +109,44 @@ def parse_args():
 
     parser.add_argument(
         "target", nargs="?",
-        help="target file (default: overwrite source)"
+        help="Target file (default: overwrite source)"
     )
     
     parser.add_argument(
-        "--version", action="version", version="%(prog)s 2.0.1"
+        "--version", action="version", version="%(prog)s 2.0.2"
     )
 
     parser.add_argument(
         "-v", "--verbose", action="store_true", 
-        help="print status messages"
+        help="Print status messages"
     )
 
     parser.add_argument(
         "-c", "--command", default="git describe --always --dirty",
-        help="version control command.\n"
+        help="Version control command.\n"
              "Use \"svnversion -n\" for subversion projects.\n"
              "(default: \"%(default)s\")"
     )
 
     parser.add_argument(
         "-r", "--raw", action="store_true",
-        help="patch binary file instead of ELF"
+        help="Patch binary file instead of ELF"
     )
 
     parser.add_argument(
         "--crc", default="0x00000000",
-        help="desired CRC result for the image\n"
+        help="Desired CRC result for the image\n"
              "(default: %(default)s)"
     )
 
     parser.add_argument(
+        "-n", "--no-crc", action="store_true",
+        help="Don't calculate CRC checksum"
+    )
+
+    parser.add_argument(
         "-f", "--force", action="store_true", 
-        help="force update if already filled out"
+        help="Force update if already filled out"
     )
 
     args = parser.parse_args()
@@ -197,10 +200,14 @@ def patch_raw():
     fill_version_info(info)
     
     info.image_size = len(raw_data)
-    info.image_crc = CRC32().forge(
-        args.crc, str(raw_data), 
-        info_offset + info.offsetof_image_crc
-    )
+
+    if not args.no_crc:
+        info.image_crc = CRC32().forge(
+            args.crc, raw_data,
+            info_offset + info.offsetof_image_crc
+        )
+    else:
+        info.image_crc = 0
 
     dprint("  image_crc  = 0x%08x" % info.image_crc)
     dprint("  image_size = %d" % info.image_size)
@@ -246,11 +253,14 @@ def patch_elf():
     info.image_start = elf.sections[0].lma
     info.image_size = elf.sections[-1].lma + elf.sections[-1].sh_size - elf.sections[0].lma
 
-    info.image_crc = CRC32().forge(
-        args.crc, str(elf.to_bin()),
-        info_section.lma - elf.sections[0].lma +
-        info_offset + info.offsetof_image_crc
-    )
+    if not args.no_crc:
+        info.image_crc = CRC32().forge(
+            args.crc, elf.to_bin(),
+            info_section.lma - elf.sections[0].lma +
+            info_offset + info.offsetof_image_crc
+        )
+    else:
+        info.image_crc = 0
 
     dprint("  image_crc   = 0x%08x" % info.image_crc)
     dprint("  image_start = 0x%08x" % info.image_start)
@@ -268,7 +278,7 @@ if __name__ == '__main__':
     try:
         parse_args()
         
-        if (args.raw):
+        if args.raw:
             patch_raw()
         else:
             patch_elf()
