@@ -1,20 +1,37 @@
+# Reader for 32 and 64 bit ELF files.
+#
+# Copyright (c)2016 Thomas Kindler <mail_git@t-kindler.de>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
 from ctypes import *
 
 # see http://lxr.free-electrons.com/source/include/uapi/linux/elf.h
 
 Elf32_Addr      = c_uint32
-Elf32_Half      = c_uint16   
-Elf32_Off       = c_uint32   
-Elf32_Sword     = c_int32   
-Elf32_Word      = c_uint32   
+Elf32_Half      = c_uint16
+Elf32_Off       = c_uint32
+Elf32_Sword     = c_int32
+Elf32_Word      = c_uint32
 
 Elf64_Addr      = c_uint64
-Elf64_Half      = c_uint16   
-Elf64_SHalf     = c_int16   
-Elf64_Off       = c_uint64   
-Elf64_Sword     = c_int32   
-Elf64_Word      = c_uint32   
-Elf64_Xword     = c_uint64   
+Elf64_Half      = c_uint16
+Elf64_SHalf     = c_int16
+Elf64_Off       = c_uint64
+Elf64_Sword     = c_int32
+Elf64_Word      = c_uint32
+Elf64_Xword     = c_uint64
 Elf64_Sxword    = c_int64
 
 EI_MAG0         = 0
@@ -62,18 +79,18 @@ SHF_EXECINSTR   = 4
 class elf32_hdr(Structure):
     _fields_ = [
         ("e_ident"      , c_char * EI_NIDENT),
-        ("e_type"       , Elf32_Half), 
-        ("e_machine"    , Elf32_Half), 
-        ("e_version"    , Elf32_Word), 
-        ("e_entry"      , Elf32_Addr), 
-        ("e_phoff"      , Elf32_Off ), 
-        ("e_shoff"      , Elf32_Off ), 
-        ("e_flags"      , Elf32_Word), 
-        ("e_ehsize"     , Elf32_Half), 
-        ("e_phentsize"  , Elf32_Half), 
-        ("e_phnum"      , Elf32_Half), 
-        ("e_shentsize"  , Elf32_Half), 
-        ("e_shnum"      , Elf32_Half), 
+        ("e_type"       , Elf32_Half),
+        ("e_machine"    , Elf32_Half),
+        ("e_version"    , Elf32_Word),
+        ("e_entry"      , Elf32_Addr),
+        ("e_phoff"      , Elf32_Off ),
+        ("e_shoff"      , Elf32_Off ),
+        ("e_flags"      , Elf32_Word),
+        ("e_ehsize"     , Elf32_Half),
+        ("e_phentsize"  , Elf32_Half),
+        ("e_phnum"      , Elf32_Half),
+        ("e_shentsize"  , Elf32_Half),
+        ("e_shnum"      , Elf32_Half),
         ("e_shstrndx"   , Elf32_Half) 
     ]
 
@@ -81,19 +98,19 @@ class elf32_hdr(Structure):
 class elf64_hdr(Structure):
     _fields_ = [
         ("e_ident"      , c_char * EI_NIDENT),
-        ("e_type"       , Elf64_Half), 
-        ("e_machine"    , Elf64_Half), 
-        ("e_version"    , Elf64_Word), 
-        ("e_entry"      , Elf64_Addr), 
-        ("e_phoff"      , Elf64_Off ), 
-        ("e_shoff"      , Elf64_Off ), 
-        ("e_flags"      , Elf64_Word), 
-        ("e_ehsize"     , Elf64_Half), 
-        ("e_phentsize"  , Elf64_Half), 
-        ("e_phnum"      , Elf64_Half), 
-        ("e_shentsize"  , Elf64_Half), 
-        ("e_shnum"      , Elf64_Half), 
-        ("e_shstrndx"   , Elf64_Half) 
+        ("e_type"       , Elf64_Half),
+        ("e_machine"    , Elf64_Half),
+        ("e_version"    , Elf64_Word),
+        ("e_entry"      , Elf64_Addr),
+        ("e_phoff"      , Elf64_Off ),
+        ("e_shoff"      , Elf64_Off ),
+        ("e_flags"      , Elf64_Word),
+        ("e_ehsize"     , Elf64_Half),
+        ("e_phentsize"  , Elf64_Half),
+        ("e_phnum"      , Elf64_Half),
+        ("e_shentsize"  , Elf64_Half),
+        ("e_shnum"      , Elf64_Half),
+        ("e_shstrndx"   , Elf64_Half)
     ]
 
 

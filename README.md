@@ -10,7 +10,7 @@ information and checksums into ELF or binary firmware images.
 
 ## Usage
 
-The tool will search for two 16 byte markers in the firmware image, and fill
+The tool will search for two 16 byte markers in the firmware image and fill
 in a structure with the current git or subversion id, a checksum, and build
 time information. The checksum is forged, so that running a CRC32 check over
 the entire image will yield the requested checksum.
