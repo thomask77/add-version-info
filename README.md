@@ -4,7 +4,7 @@ Embedded programmers often face the task to insert a checksum into binaries
 after linking. A bootloader can then verify the checksum before allowing a
 firmware update or running the program.
 
-add_version_info is a small python script that can insert version control
+`add_version_info` is a small python script that can insert version control
 information and checksums into ELF or binary firmware images.
 
 

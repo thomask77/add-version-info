@@ -1,6 +1,6 @@
 # Reader for 32 and 64 bit ELF files.
 #
-# Copyright (c)2016 Thomas Kindler <mail_git@t-kindler.de>
+# Copyright (c)2018 Thomas Kindler <mail_git@t-kindler.de>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -176,10 +176,10 @@ class ELFException(Exception):
 
 class ELFObject:
     @classmethod
-    def from_string(cls, data):
+    def from_bytes(cls, data):
         # Check for ELF32 or ELF64 signature
         #
-        if data[EI_MAG0:EI_MAG3+1] != '\x7fELF':
+        if data[EI_MAG0:EI_MAG3 + 1] != b'\x7fELF':
             raise ELFException("ELF signature not found")
 
         if data[EI_CLASS] == ELFCLASS32:
@@ -243,11 +243,11 @@ class ELFObject:
 
         return obj
 
-    def to_bin(self, gap_fill=0xFF):
+    def to_bin(self, gap_fill=0xff):
         bin_data = bytearray()
         for s in self.sections:
             gap = (s.lma - self.sections[0].lma) - len(bin_data)
-            bin_data += chr(gap_fill) * gap
+            bin_data += bytes([gap_fill] * gap)
             bin_data += s.data
 
         return bin_data

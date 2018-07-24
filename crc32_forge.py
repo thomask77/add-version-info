@@ -6,7 +6,7 @@
 #   http://www.ross.net/crc/crcpaper.html
 #
 # Copyright (c)2013 StalkR <github-misc@stalkr.net>
-# Copyright (c)2016 Thomas Kindler <mail_git@t-kindler.de>
+# Copyright (c)2018 Thomas Kindler <mail_git@t-kindler.de>
 #
 # 2015-08-19, tk:   Use bytearrays instead of strings. Fixed indentation and comments.
 # 2015-01-29, tk:   Changed forge() to skip the bytes at pos instead of inserting
@@ -33,11 +33,11 @@ class CRC32(object):
         self.table   = [0] * 256
         self.reverse = [0] * 256
 
-        for i in xrange(256):
+        for i in range(256):
             fwd = i
             rev = i << 24
 
-            for _ in xrange(8, 0, -1):
+            for _ in range(8, 0, -1):
                 # Build normal table
                 #
                 if fwd & 1:

@@ -1,16 +1,17 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 #
 # Add CRC checksum and version information to ELF and binary files
 #
-# Copyright (c)2016 Thomas Kindler <mail_git@t-kindler.de>
+# Copyright (c)2015-2018 Thomas Kindler <mail_git@t-kindler.de>
 #
-# 2016-01-09, tk:   v2.1.0, --stm32 option for STM32F4 hardware compatible CRCs
+# 2018-07-28, tk:   v3.0.0, Ported to Python 3
+# 2016-01-09, tk:   v2.1.0, --stm32 option for STM32 hardware compatible CRCs
 # 2015-08-19, tk:   v2.0.2, Improved performance. Added --no-crc option
 # 2015-07-04, tk:   v2.0.1, Don't load data for SHT_NOBITS sections
 # 2015-06-20, tk:   v2.0.0, Support for ELF64 and binary files, elf_reader
 #                           rewritten from scratch. New options for version
 #                           control command and desired CRC
-# 2015-02-14, tk:   v1.1.0, Added svn support
+# 2015-02-14, tk:   v1.1.0, Added SVN support
 # 2015-01-24, tk:   v1.0.0, Initial implementation
 #
 # This program is free software: you can redistribute it and/or modify
@@ -30,70 +31,59 @@ import argparse
 import subprocess
 import getpass
 import platform
-import elf_reader
-import struct
+import ctypes
+import datetime
+import os
 
-from ctypes import *
-from datetime import datetime
+import elf_reader
 from crc32_forge import CRC32
 
 
-VCS_INFO_START = "VCSINFO2_START->"
-VCS_INFO_END   = "<---VCSINFO2_END"
+ENCODING = "iso8859-15"
+
+VCS_INFO_START = b"VCSINFO2_START->"
+VCS_INFO_END   = b"<---VCSINFO2_END"
 
 
-class version_info(Structure):
+class version_info(ctypes.LittleEndianStructure):
+    _pack_ = 1
     _fields_ = [
-        ("vcs_info_start", c_char * 16),
+        ("vcs_info_start", ctypes.c_char * 16),
 
         # set by add-version-info.py
         #
-        ("image_crc"    , c_uint32),        # see offsetof_image_crc
-        ("image_start"  , c_uint32),
-        ("image_size"   , c_uint32),
-        ("vcs_id"       , c_char * 32),
-        ("build_user"   , c_char * 16),
-        ("build_host"   , c_char * 16),
-        ("build_date"   , c_char * 16),
-        ("build_time"   , c_char * 16),
+        ("image_crc"    , ctypes.c_uint32),
+        ("image_start"  , ctypes.c_uint32),
+        ("image_size"   , ctypes.c_uint32),
+        ("vcs_id"       , ctypes.c_char * 32),
+        ("build_user"   , ctypes.c_char * 16),
+        ("build_host"   , ctypes.c_char * 16),
+        ("build_date"   , ctypes.c_char * 16),
+        ("build_time"   , ctypes.c_char * 16),
 
-        # set at compile-time
-        #
-        ("product_name" , c_char * 32),
-        ("major"        , c_int),
-        ("minor"        , c_int),
-        ("patch"        , c_int),
-
-        ("vcs_info_end" , c_char * 16)
+        ("vcs_info_end" , ctypes.c_char * 16)
     ]
-
-    offsetof_image_crc = 16     # workaround for missing ctypes.offsetof :/
-
-
-def fill_version_info(info):
-    dprint("running \"%s\"..." % args.command)
-
-    info.vcs_id = subprocess.check_output(args.command, shell=True).strip()
-    dprint(info.vcs_id)
-
-    info.build_user = getpass.getuser()
-    info.build_host = platform.node()
-
-    now = datetime.now()
-    info.build_date = now.strftime("%Y-%m-%d")
-    info.build_time = now.strftime("%H:%M:%S")
 
 
 def dprint(*text):
     if args.verbose:
         for s in text:
-            print s,
-        print
+            print(s, end=' ')
+        print()
 
 
-def print_ctype(c):
-    for field_name in c._fields_:
-        print "%s = %s" % (field_name, getattr(c, field_name))
+def fill_version_info(info):
+    dprint("Running \"%s\"..." % args.command)
+
+    info.vcs_id = subprocess.check_output(args.command, shell=True).strip()
+    dprint(info.vcs_id.decode(ENCODING))
+
+    info.build_user = bytes(getpass.getuser(), ENCODING)
+    info.build_host = bytes(platform.node(), ENCODING)
+
+    mtime = datetime.datetime.fromtimestamp( os.path.getmtime(args.source) )
+    info.build_date = bytes(mtime.strftime("%Y-%m-%d"), ENCODING)
+    info.build_time = bytes(mtime.strftime("%H:%M:%S"), ENCODING)
 
 
 def parse_args():
@@ -114,7 +104,7 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--version", action="version", version="%(prog)s 2.1.0"
+        "--version", action="version", version="%(prog)s 3.0.0"
     )
 
     parser.add_argument(
@@ -175,8 +165,8 @@ def find_info_offset(data):
         if offset < 0:
             return -1
 
-        if data[offset + sizeof(version_info)-16 :
-                offset + sizeof(version_info)] == VCS_INFO_END:
+        if data[offset + ctypes.sizeof(version_info) - 16:
+                offset + ctypes.sizeof(version_info) ] == VCS_INFO_END:
             return offset
 
         offset += len(VCS_INFO_START)
@@ -193,16 +183,16 @@ def bitrev32(x):
 
 def stm32_shuffle(data):
     out = bytearray()
-    for i in xrange(0, len(data), 4):
+    for i in range(0, len(data), 4):
         out += struct.pack('<L', bitrev32(struct.unpack_from('<L', data, i)[0]))
     return out
 
 
 def stm32_hw_crc(data):
     crc = 0xffffffff
-    for i in xrange(0, len(data), 4):
+    for i in range(0, len(data), 4):
         crc = crc ^ struct.unpack_from('<L', data, i)[0]
-        for _ in xrange(32):
+        for _ in range(32):
             if crc & 0x80000000:
                 crc = ((crc << 1) & 0xffffffff) ^ 0x04C11DB7;
             else:
@@ -220,7 +210,7 @@ def forge_crc(data, offset):
 
 
 def patch_raw(data):
-    dprint("searching for structure marker...")
+    dprint("Searching for structure marker...")
 
     info_offset = find_info_offset(data)
     if info_offset < 0:
@@ -237,18 +227,18 @@ def patch_raw(data):
 
     info.image_start = 0
     info.image_size = len(data)
-    info.image_crc = forge_crc(data, info_offset + info.offsetof_image_crc)
+    info.image_crc = forge_crc(data, info_offset + version_info.image_crc.offset)
 
     dprint("  image_crc   = 0x%08x" % info.image_crc)
     dprint("  image_size  = %d" % info.image_size)
 
 
 def patch_elf(data):
-    elf = elf_reader.ELFObject.from_string(data)
+    elf = elf_reader.ELFObject.from_bytes(data)
     for s in elf.sections:
-        dprint("  %-16s: 0x%08x -> 0x%08x %8d" % (s.name, s.lma, s.sh_addr, s.sh_size))
+        dprint("  %-16s: 0x%08x -> 0x%08x %8d" % (s.name.decode(ENCODING), s.lma, s.sh_addr, s.sh_size))
 
-    dprint("searching for structure marker...")
+    dprint("Searching for structure marker...")
 
     for info_section in elf.sections:
         info_offset = find_info_offset(info_section.data)
@@ -257,7 +247,7 @@ def patch_elf(data):
     else:
         raise Exception("structure marker not found")
 
-    dprint("  found in %s at %d" % (info_section.name, info_offset))
+    dprint("  found in %s at %d" % (info_section.name.decode(ENCODING), info_offset))
 
     info = version_info.from_buffer(info_section.data, info_offset)
 
@@ -268,8 +258,8 @@ def patch_elf(data):
 
     info.image_start = elf.sections[0].lma
     info.image_size = elf.sections[-1].lma + elf.sections[-1].sh_size - elf.sections[0].lma
-    info.image_crc = forge_crc( elf.to_bin(), 
-        info_section.lma - elf.sections[0].lma + info_offset + info.offsetof_image_crc
+    info.image_crc = forge_crc( elf.to_bin(),
+        info_section.lma - elf.sections[0].lma + info_offset + version_info.image_crc.offset
     )
 
     dprint("  image_crc   = 0x%08x" % info.image_crc)
@@ -280,7 +270,7 @@ def patch_elf(data):
 if __name__ == '__main__':
     parse_args()
 
-    dprint("loading \"%s\"..." % args.source)
+    dprint("Loading \"%s\"..." % args.source)
 
     with open(args.source, "rb") as f:
         data = bytearray(f.read())
@@ -290,8 +280,7 @@ if __name__ == '__main__':
     else:
         patch_elf(data)
 
-    dprint("saving \"%s\"..." % args.target)
+    dprint("Saving \"%s\"..." % args.target)
 
     with open(args.target, "wb") as f:
         f.write(data)
-
