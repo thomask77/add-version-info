@@ -53,7 +53,7 @@ struct version_info {
 
 extern volatile const struct version_info  version_info;
 
-void print_version_info(int verbose);
+void print_version_info(const struct version_info *v);
 ```
 
 #### `version.c`
@@ -74,15 +74,19 @@ volatile const struct version_info version_info = {
 void print_version_info(const struct version_info *v)
 {
     printf(
-        "%s v%d.%d.%d %s %s %s\n"
-        "  Compiled %s %s by %s on %s\n"
+        "%s v%d.%d.%d %s\n\r"
+        "Compiled %s %s by %s on %s\n\r"
+        "Image Start: 0x%x Size: %d\n\r"
+        "Image CRC: 0x%x\n",
         v->product_name,
         v->major, v->minor, v->patch,
         v->vcs_id,
         v->build_date, v->build_time,
-        v->build_date, v->build_time,
-        v->build_user, v->build_host
+        v->build_user, v->build_host,
+        v->image_start, v->image_size,
+        v->image_crc
     );
+
 }
 
 void main(void)

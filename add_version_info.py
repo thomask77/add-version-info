@@ -34,6 +34,7 @@ import platform
 import ctypes
 import datetime
 import os
+import struct
 
 import elf_reader
 from crc32_forge import CRC32
@@ -60,6 +61,10 @@ class version_info(ctypes.LittleEndianStructure):
         ("build_host"   , ctypes.c_char * 16),
         ("build_date"   , ctypes.c_char * 16),
         ("build_time"   , ctypes.c_char * 16),
+        ("product_name" , ctypes.c_char * 32),
+        ("major"        , ctypes.c_int32),
+        ("minor"        , ctypes.c_int32),
+        ("patch"        , ctypes.c_int32),
 
         ("vcs_info_end" , ctypes.c_char * 16)
     ]
