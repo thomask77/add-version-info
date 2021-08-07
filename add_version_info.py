@@ -84,7 +84,7 @@ def fill_version_info(info):
     dprint(info.vcs_id.decode(ENCODING))
 
     info.build_user = bytes(getpass.getuser(), ENCODING)
-    info.build_host = bytes(platform.node(), ENCODING)
+    info.build_host = bytes(platform.node()[0:16], ENCODING)
 
     mtime = datetime.datetime.fromtimestamp( os.path.getmtime(args.source) )
     info.build_date = bytes(mtime.strftime("%Y-%m-%d"), ENCODING)
